@@ -6,6 +6,7 @@ require('dotenv').config()
 
 app.use(cors())
 app.use(express.json())
+const stripe = require('stripe')(process.env.PAYMENT_SK)
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -27,6 +28,7 @@ async function run() {
 
         const menuCollection = client.db("chefKing").collection('menus')
         const cartCollection = client.db("chefKing").collection('carts')
+        const paymentCollection = client.db("chefKing").collection('payments')
 
         app.get('/menus', async (req, res) => {
             const result = await menuCollection.find().toArray()
@@ -51,6 +53,49 @@ async function run() {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await cartCollection.deleteOne(query)
+            res.send(result)
+        })
+
+        // Payment intent
+        app.post('/create-payment-intent', async (req, res) => {
+            const { price } = req.body;
+            const amount = parseInt(price * 100)
+            console.log(amount)
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ["card"]
+            })
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+        })
+
+        // Save Payments
+        app.post('/payments', async (req, res) => {
+            const payment = req.body
+            const paymentResult = await paymentCollection.insertOne(payment)
+
+            console.log("payment info", payment)
+            // Delete cart items
+
+            const query = {
+                _id: {
+                    $in: payment.cartIds.map(id => new ObjectId(id))
+                }
+            }
+            const deletedResult = await cartCollection.deleteMany(query)
+
+            res.send({ paymentResult, deletedResult })
+
+        })
+
+        // Get Payment Data
+        app.get('/payments/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await paymentCollection.find(query).toArray()
             res.send(result)
         })
 
