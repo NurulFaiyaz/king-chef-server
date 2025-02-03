@@ -26,9 +26,43 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
+        const userCollection = client.db("chefKing").collection('users')
         const menuCollection = client.db("chefKing").collection('menus')
         const cartCollection = client.db("chefKing").collection('carts')
         const paymentCollection = client.db("chefKing").collection('payments')
+
+
+
+        // User Related Api
+        app.get('/users', async (req, res) => {
+            const result = await userCollection.find().toArray()
+            res.send(result)
+        })
+
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const result = await userCollection.findOne(query)
+            res.send(result)
+        })
+
+        app.post('/users/:email', async (req, res) => {
+
+            const email = req.params.email;
+            const query = { email }
+            const isExist = await userCollection.findOne(query)
+
+            if (isExist) {
+                return { isExist }
+            }
+            const user = req.body;
+            const data = {
+                ...user,
+                role: "user"
+            }
+            const result = await userCollection.insertOne(data)
+            res.send(result)
+        })
 
         app.get('/menus', async (req, res) => {
             const result = await menuCollection.find().toArray()
