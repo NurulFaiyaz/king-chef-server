@@ -164,7 +164,7 @@ run().catch(console.dir);
 
 
 app.get('/', async (req, res) => {
-    res.send('king can not wait')
+    res.send('Welcome to KingChef Server')
 })
 
 app.listen(port, () => {
