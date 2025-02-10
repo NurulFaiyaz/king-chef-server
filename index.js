@@ -64,10 +64,29 @@ async function run() {
             res.send(result)
         })
 
+        // Menus related APIs
+
         app.get('/menus', async (req, res) => {
             const result = await menuCollection.find().toArray()
             res.send(result)
         })
+
+        app.post('/menu', async (req, res) => {
+            const menuItem = req.body;
+            const result = await menuCollection.insertOne(menuItem)
+            res.send(result)
+        }
+
+        )
+
+        // Delete Menu
+        app.delete('/menus/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const result = menuCollection.deleteOne(query)
+            res.send(result)
+        })
+
 
         // add to cart
         app.post('/carts', async (req, res) => {
